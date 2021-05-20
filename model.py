@@ -1,3 +1,4 @@
+#%%
 from tensorflow.keras import layers
 import os
 
@@ -14,10 +15,21 @@ from tensorflow import keras
 import keras
 import numpy as np
 from tensorflow.keras.preprocessing.image import load_img
+from utils import read_dataset
 
+import warnings
+
+import tensorflow as tf
+
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
+tf.get_logger().setLevel('ERROR')
+warnings.filterwarnings('ignore')
+
+#%%
 
 def get_model(img_size, num_classes):
-    inputs = keras.Input(shape=img_size + (3,))
+    inputs = keras.Input(shape=img_size + (1,))
 
     ### [First half of the network: downsampling inputs] ###
 
@@ -73,15 +85,37 @@ def get_model(img_size, num_classes):
     model = keras.Model(inputs, outputs)
     return model
 
+from utils import read_dataset
 
 # Free up RAM in case the model definition cells were run multiple times
 keras.backend.clear_session()
 
-img_size = (160, 160)
-num_classes = 3
+
+img_size = (256, 256)
+num_classes = 2
 batch_size = 32
 # Build model
 model = get_model(img_size, num_classes)
-model.summary()
 
-plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
+#plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
+
+model.compile(optimizer="rmsprop", loss="sparse_categorical_crossentropy")
+
+callbacks = [
+    keras.callbacks.ModelCheckpoint("oxford_segmentation.h5", save_best_only=True)
+]
+
+# Train the model, doing validation at the end of each epoch.
+epochs = 15
+
+x_train, x_test, y_train, y_test = read_dataset()
+
+
+model.fit(x_train, y_train, epochs=epochs, validation_data=(x_test,y_test), callbacks=callbacks, batch_size=32)
+
+#model.summary()
+
+
+
+
+# %%
