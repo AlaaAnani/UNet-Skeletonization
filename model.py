@@ -10,9 +10,6 @@ from PIL import ImageOps
 from keras.utils.vis_utils import plot_model
 
 from tensorflow import keras
-
-
-import keras
 import numpy as np
 from tensorflow.keras.preprocessing.image import load_img
 from utils import read_dataset
