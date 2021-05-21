@@ -14,6 +14,8 @@ def read_dataset(path='dataset/'):
     x_train = []
     y_train = []
     for j, file in enumerate(img_names):
+        if file.find(".png") == -1:
+            continue
         shape_img = imread('/'.join([xpath, file]), as_gray=True)
         skel_img = imread('/'.join([ypath, file]), as_gray=True)
         x_train.append(shape_img)
