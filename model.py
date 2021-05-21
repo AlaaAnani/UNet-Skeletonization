@@ -146,7 +146,7 @@ model.fit(x_train, y_train, epochs=epochs, validation_data=(x_test,y_test), call
 
 
 
-new_model = keras.models.load_model('unet_skel.h5')
+new_model = keras.models.load_model('unet_skel.h5', custom_objects={"f1_m": f1_m})
 
 Y = new_model.predict(x_test)
 
