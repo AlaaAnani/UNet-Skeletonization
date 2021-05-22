@@ -4,6 +4,8 @@ import os
 
 from IPython.display import Image, display
 from tensorflow.keras.preprocessing.image import load_img
+import PIL
+from PIL import ImageOps
 
 
 from tensorflow import keras 
@@ -18,6 +20,9 @@ import tensorflow as tf
 from skimage.io import imsave
 
 from model_utils import get_model, f1_m, recall_m, precision_m
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
+tf.get_logger().setLevel('ERROR')
+warnings.filterwarnings('ignore')
 from utils import read_dataset
 
 # %%
@@ -38,6 +43,7 @@ y_train, y_test = reshape_target(y_train), reshape_target(y_test)
 # %%
 # Free up RAM in case the model definition cells were run multiple times
 keras.backend.clear_session()
+
 
 img_size = (256, 256)
 num_classes = 2
@@ -76,26 +82,46 @@ def f1_m(y_true, y_pred):
     precision = precision_m(y_true, y_pred)
     recall = recall_m(y_true, y_pred)
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
-
+from functools import partial
+from tensorflow.keras import activations
+from itertools import product
 
 # %%
 model = get_model(img_size, num_classes)
 #model.compile(optimizer="sgd",loss=tf.keras.losses.CategoricalHinge(), metrics=[f1_m])
 from losses import weighted_cce
-weights = np.array([0.75, 50])
-model.compile(optimizer="sgd",loss=weighted_cce(weights), metrics=[f1_m])
+weights = np.array([1, 50])
+opt = tf.keras.optimizers.SGD(learning_rate=0.05,  name="SGD")
+model.compile(optimizer=opt,loss=weighted_cce(weights), metrics=[f1_m])
 
 callbacks = [
     keras.callbacks.ModelCheckpoint("unet_skel.h5", save_best_only=True)
 ]
 # Train the model, doing validation at the end of each epoch.
-epochs = 100
+# %%
+epochs = 200
 model.fit(x_train, y_train, epochs=epochs, validation_data=(x_test,y_test), callbacks=callbacks, batch_size=32)
 
 # %%
+modelFile = "unet_skel.h5"
+new_model = tf.keras.models.model_from_json(open(modelFile).read())
+new_model.load_weights(os.path.join(os.path.dirname(modelFile), 'model_weights.h5'))
+# %%
+def loss(y_true, y_pred):
+    weights = K.variable( np.array([1, 50]))
+    # scale predictions so that the class probas of each sample sum to 1
+    y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
+    # clip to prevent NaN's and Inf's
+    y_pred = K.clip(y_pred, K.epsilon(), 1 - K.epsilon())
+    # calc
+    loss = y_true * K.log(y_pred) * weights
+    loss = -K.sum(loss, -1)
+    return loss        
 
-new_model = keras.models.load_model('unet_skel.h5', custom_objects={"f1_m": f1_m})
-
+w_loss = partial(weighted_cce, weights)
+new_model = keras.models.load_model('unet_skel.h5', custom_objects={"loss":loss,"f1_m": f1_m})
+new_model.fit(x_train, y_train, epochs=200, validation_data=(x_test,y_test), callbacks=callbacks, batch_size=32)
+# %%
 Y = new_model.predict(x_test)
 
 #%%
