@@ -132,3 +132,4 @@ dataset/
 Y_val/
 
 .vscode/
+logs/
