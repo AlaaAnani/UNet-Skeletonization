@@ -1,28 +1,21 @@
 #%%
-from tensorflow.keras import layers
 import os
-
-from IPython.display import Image, display
-from tensorflow.keras.preprocessing.image import load_img
-import PIL
-from PIL import ImageOps
-
-from keras.utils.vis_utils import plot_model
-
-from tensorflow import keras
-
+import warnings
 
 import keras
 import numpy as np
-from tensorflow.keras.preprocessing.image import load_img
-from utils import read_dataset
-
-import warnings
-
+import PIL
 import tensorflow as tf
-
+from IPython.display import Image, display
+from keras.utils.vis_utils import plot_model
+from PIL import ImageOps
 from skimage.io import imsave
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.preprocessing.image import load_img
 
+from metrics import f1_m
+from utils import read_dataset
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
 tf.get_logger().setLevel('ERROR')
@@ -148,34 +141,6 @@ def get_model_unet(img_size, num_classes):
 
 
 from keras import backend as K
-
-def recall_m(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(tf.math.multiply(y_true, y_pred), 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    recall = true_positives / (possible_positives + K.epsilon())
-    return recall
-
-def precision_m(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(tf.math.multiply(y_true, y_pred), 0, 1)))
-    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
-    precision = true_positives / (predicted_positives + K.epsilon())
-    return precision
-
-def f1_m(y_true, y_pred):
-    
-    mask = tf.math.argmax(y_pred, axis=-1)
-    y_pred = tf.expand_dims(mask, axis=-1)
-    y_pred = tf.cast(y_pred, float)
-
-    y_pred = tf.reshape(y_pred, shape=(tf.shape(y_pred)[0], 256,256))
-
-    y_pred = tf.squeeze(y_pred)
-    y_true = tf.squeeze(y_true)
-
-    precision = precision_m(y_true, y_pred)
-    recall = recall_m(y_true, y_pred)
-    return 2*((precision*recall)/(precision+recall+K.epsilon()))
-
 from utils import read_dataset
 
 # Free up RAM in case the model definition cells were run multiple times

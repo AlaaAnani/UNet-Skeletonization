@@ -130,5 +130,7 @@ dmypy.json
 
 dataset/
 Y_val/
+Y_pred/
+Y_con/
 
 .vscode/
