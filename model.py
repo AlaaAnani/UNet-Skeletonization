@@ -1,4 +1,5 @@
 #%%
+from tensorflow.keras import layers
 import os
 
 from IPython.display import Image, display
@@ -7,15 +8,14 @@ from tensorflow.keras.preprocessing.image import load_img
 
 from tensorflow import keras 
 import numpy as np
-import PIL
-import tensorflow as tf
-from IPython.display import Image, display
-from keras.utils.vis_utils import plot_model
-from PIL import ImageOps
-from skimage.io import imsave
-from tensorflow import keras
-from tensorflow.keras import layers
 from tensorflow.keras.preprocessing.image import load_img
+from utils import read_dataset
+
+import warnings
+
+import tensorflow as tf
+
+from skimage.io import imsave
 
 from model_utils import get_model, f1_m, recall_m, precision_m
 from utils import read_dataset
@@ -70,13 +70,12 @@ def f1_m(y_true, y_pred):
     y_pred = tf.reshape(y_pred, shape=(tf.shape(y_pred)[0], 256,256))
     y_true = tf.reshape(y_true, shape=(tf.shape(y_true)[0], 256,256))
 
-        x = layers.UpSampling2D(2)(x)
+    y_pred = tf.squeeze(y_pred)
+    y_true = tf.squeeze(y_true)
 
-        # Project residual
-        # residual = layers.UpSampling2D(2)(prev_layers[filters])
-        residual = prev_layers[filters]
-        # residual = layers.Conv2D(filters, 1, padding="same")(residual)
-        x = layers.concatenate([residual, x])  # Add back residual
+    precision = precision_m(y_true, y_pred)
+    recall = recall_m(y_true, y_pred)
+    return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
 
 # %%
@@ -112,8 +111,3 @@ for i, y in enumerate(Y):
 
 
 #model.summary()
-
-
-
-
-# %%

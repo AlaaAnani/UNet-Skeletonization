@@ -2,12 +2,11 @@
 import os
 import warnings
 
-import keras
 import numpy as np
 import PIL
 import tensorflow as tf
 from IPython.display import Image, display
-from keras.utils.vis_utils import plot_model
+# from keras.utils.vis_utils import plot_model
 from PIL import ImageOps
 from skimage.io import imsave
 from tensorflow import keras
@@ -15,9 +14,10 @@ from tensorflow.keras import layers
 from tensorflow.keras.preprocessing.image import load_img
 
 from metrics import f1_m
+from losses import weighted_cce
 from utils import read_dataset
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
+# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
 tf.get_logger().setLevel('ERROR')
 warnings.filterwarnings('ignore')
 
@@ -140,7 +140,7 @@ def get_model_unet(img_size, num_classes):
     return model
 
 
-from keras import backend as K
+from tensorflow.keras import backend as K
 from utils import read_dataset
 
 # Free up RAM in case the model definition cells were run multiple times
@@ -153,9 +153,10 @@ batch_size = 32
 # Build model
 model = get_model_unet(img_size, num_classes)
 
-plot_model(model, to_file='model_plot_unet.png', show_shapes=True, show_layer_names=True)
-
+# plot_model(model, to_file='model_plot_unet.png', show_shapes=True, show_layer_names=True)
+weights = np.array([0.75, 50])
 model.compile(optimizer="rmsprop", loss="sparse_categorical_crossentropy", metrics=[f1_m])
+
 
 callbacks = [
     keras.callbacks.ModelCheckpoint("unet_skel.h5", save_best_only=True)
