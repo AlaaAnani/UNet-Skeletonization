@@ -4,8 +4,6 @@ import os
 
 from IPython.display import Image, display
 from tensorflow.keras.preprocessing.image import load_img
-import PIL
-from PIL import ImageOps
 
 
 from tensorflow import keras 
@@ -20,9 +18,6 @@ import tensorflow as tf
 from skimage.io import imsave
 
 from model_utils import get_model, f1_m, recall_m, precision_m
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
-tf.get_logger().setLevel('ERROR')
-warnings.filterwarnings('ignore')
 from utils import read_dataset
 
 # %%
@@ -43,7 +38,6 @@ y_train, y_test = reshape_target(y_train), reshape_target(y_test)
 # %%
 # Free up RAM in case the model definition cells were run multiple times
 keras.backend.clear_session()
-
 
 img_size = (256, 256)
 num_classes = 2
@@ -82,9 +76,7 @@ def f1_m(y_true, y_pred):
     precision = precision_m(y_true, y_pred)
     recall = recall_m(y_true, y_pred)
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
-from functools import partial
-from tensorflow.keras import activations
-from itertools import product
+
 
 # %%
 model = get_model(img_size, num_classes)
