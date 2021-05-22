@@ -4,18 +4,18 @@ from numpy import load
 from numpy import zeros
 from numpy import ones
 from numpy.random import randint
-from keras.optimizers import Adam
-from keras.initializers import RandomNormal
-from keras.models import Model
-from keras.models import Input
-from keras.layers import Conv2D
-from keras.layers import Conv2DTranspose
-from keras.layers import LeakyReLU
-from keras.layers import Activation
-from keras.layers import Concatenate
-from keras.layers import Dropout
-from keras.layers import BatchNormalization
-from keras.layers import LeakyReLU
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Conv2DTranspose
+from tensorflow.keras.layers import LeakyReLU
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import Concatenate
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import LeakyReLU
 from matplotlib import pyplot
 
 # define the discriminator model
@@ -53,7 +53,7 @@ def define_discriminator(image_shape):
 	# define model
 	model = Model([in_src_image, in_target_image], patch_out)
 	# compile model
-	opt = Adam(lr=0.0002, beta_1=0.5)
+	opt = Adam(learning_rate=0.0002, beta_1=0.5)
 	model.compile(loss='binary_crossentropy', optimizer=opt, loss_weights=[0.5])
 	return model
 
@@ -134,7 +134,7 @@ def define_gan(g_model, d_model, image_shape):
 	# src image as input, generated image and classification output
 	model = Model(in_src, [dis_out, gen_out])
 	# compile model
-	opt = Adam(lr=0.0002, beta_1=0.5)
+	opt = Adam(learning_rate=0.0002, beta_1=0.5)
 	model.compile(loss=['binary_crossentropy', 'mae'], optimizer=opt, loss_weights=[1,100])
 	return model
 
@@ -179,32 +179,34 @@ def summarize_performance(step, g_model, dataset, n_samples=3):
 	X_realA = (X_realA + 1) / 2.0
 	X_realB = (X_realB + 1) / 2.0
 	X_fakeB = (X_fakeB + 1) / 2.0
+	"""
 	# plot real source images
 	for i in range(n_samples):
 		pyplot.subplot(3, n_samples, 1 + i)
 		pyplot.axis('off')
-		pyplot.imshow(X_realA[i])
+		pyplot.imshow(X_realA[i], cmap='gray')
 	# plot generated target image
 	for i in range(n_samples):
 		pyplot.subplot(3, n_samples, 1 + n_samples + i)
 		pyplot.axis('off')
-		pyplot.imshow(X_fakeB[i])
+		pyplot.imshow(X_fakeB[i], cmap='gray')
 	# plot real target image
 	for i in range(n_samples):
 		pyplot.subplot(3, n_samples, 1 + n_samples*2 + i)
 		pyplot.axis('off')
-		pyplot.imshow(X_realB[i])
+		pyplot.imshow(X_realB[i], cmap='gray')
 	# save plot to file
 	filename1 = 'plot_%06d.png' % (step+1)
 	pyplot.savefig(filename1)
 	pyplot.close()
+	"""
 	# save the generator model
 	filename2 = 'model_%06d.h5' % (step+1)
 	g_model.save(filename2)
-	print('>Saved: %s and %s' % (filename1, filename2))
+	print('>Saved: %s' % (filename2))
 
 # train pix2pix models
-def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
+def train(d_model, g_model, gan_model, dataset, save_every_n_epoch=2, n_epochs=100, n_batch=1):
 	# determine the output square shape of the discriminator
 	n_patch = d_model.output_shape[1]
 	# unpack dataset
@@ -228,7 +230,7 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
 		# summarize performance
 		print('>%d, d1[%.3f] d2[%.3f] g[%.3f]' % (i+1, d_loss1, d_loss2, g_loss))
 		# summarize model performance
-		if (i+1) % (bat_per_epo * 10) == 0:
+		if (i+1) % (bat_per_epo * save_every_n_epoch) == 0:
 			summarize_performance(i, g_model, dataset)
 from utils import read_dataset
 
@@ -253,5 +255,14 @@ g_model = define_generator(image_shape+(1,))
 # define the composite model
 gan_model = define_gan(g_model, d_model, image_shape)
 # train model
-train(d_model, g_model, gan_model, dataset)
+train(d_model, g_model, gan_model, dataset,\
+	save_every_n_epoch=5, n_epochs=50, n_batch=32)
+# %%
+from tensorflow.keras.models import load_model
+new_model = load_model('model_000012.h5')
+Y = new_model.predict(x_test)
+# %%
+from skimage.io import imsave
+for i, y in enumerate(Y):
+    imsave(f'Y_pix2pix_val/{i}.png', y)
 # %%
