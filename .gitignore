@@ -131,6 +131,12 @@ dmypy.json
 dataset/
 Y_val/
 Y_pred/
+Y_pred_init/
+Y_pred_new/
 Y_con/
+Y_eroded/
+Y_target/
+test_shapes/
+overlapped/
 
 .vscode/

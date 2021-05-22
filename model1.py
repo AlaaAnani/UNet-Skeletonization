@@ -5,20 +5,25 @@ import warnings
 import numpy as np
 import PIL
 import tensorflow as tf
+tf.random.set_seed(73)
+
+
 from IPython.display import Image, display
 # from keras.utils.vis_utils import plot_model
 from PIL import ImageOps
 from skimage.io import imsave
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.keras.preprocessing.image import load_img
 
 from metrics import f1_m
+from utils import read_dataset, reshape_target, collapse_dim, write_imgs
 from losses import weighted_cce
-from utils import read_dataset
+weights = np.array([1, 15])
+
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
-tf.get_logger().setLevel('ERROR')
+tf.get_logger().setLevel('INFO')
+tf.autograph.set_verbosity(1)
 warnings.filterwarnings('ignore')
 
 #%%
@@ -140,57 +145,61 @@ def get_model_unet(img_size, num_classes):
     return model
 
 
-from tensorflow.keras import backend as K
-from utils import read_dataset
 
 # Free up RAM in case the model definition cells were run multiple times
 keras.backend.clear_session()
 
+x_train, x_test, y_train, y_test, names_train, names_test = read_dataset()
+y_train_r, y_test_r = reshape_target(y_train), reshape_target(y_test)
 
+write_imgs(x_test, names_test, 'test_shapes')
+write_imgs(y_test, names_test, 'Y_target')
+#%%
 img_size = (256, 256)
 num_classes = 2
 batch_size = 32
 # Build model
-model = get_model_unet(img_size, num_classes)
+model1 = get_model_unet(img_size, num_classes)
+model2 = get_model_unet(img_size, num_classes)
 
-# plot_model(model, to_file='model_plot_unet.png', show_shapes=True, show_layer_names=True)
-weights = np.array([0.75, 50])
-model.compile(optimizer="rmsprop", loss="sparse_categorical_crossentropy", metrics=[f1_m])
+model1.compile(optimizer="adam", loss=weighted_cce(weights), metrics=[f1_m])
+model2.compile(optimizer="adam", loss=weighted_cce(weights), metrics=[f1_m])
 
 
-callbacks = [
-    keras.callbacks.ModelCheckpoint("unet_skel.h5", save_best_only=True)
+callbacks1 = [
+    keras.callbacks.ModelCheckpoint("unet_skel_init.h5", save_best_only=True)
+]
+
+callbacks2 = [
+    keras.callbacks.ModelCheckpoint("unet_skel_next.h5", save_best_only=True)
 ]
 
 # Train the model, doing validation at the end of each epoch.
-epochs = 100
-
-x_train, x_test, y_train, y_test = read_dataset()
-
-
-model.fit(x_train, y_train, epochs=epochs, validation_data=(x_test,y_test), callbacks=callbacks, batch_size=32)
-
-
-
-new_model = keras.models.load_model('unet_skel.h5', custom_objects={"f1_m": f1_m})
-
-Y = new_model.predict(x_test)
+epochs = 64
 
 #%%
-print(Y[0].shape)
-
-#%%%
-for i, y in enumerate(Y):
-    print()
-    mask = np.argmax(y, axis=-1)
-    mask = np.expand_dims(mask, axis=-1)
-    imsave(f'Y_val/{i}.png', mask)
 
 
+# model1.fit(x_train, y_train_r, epochs=epochs, validation_data=(x_test,y_test_r), callbacks=callbacks1, batch_size=32)
+model1 = keras.models.load_model('unet_skel_init.h5', custom_objects={"f1_m": f1_m, "loss": weighted_cce(weights)})
 
-#model.summary()
+#%%
+
+x_train_new = model1.predict(x_train)
+x_test_new = model1.predict(x_test)
+
+x_train_new = collapse_dim(x_train_new)
+x_test_new = collapse_dim(x_test_new)
 
 
+# model2.fit(x_train_new, y_train_r, epochs=epochs, validation_data=(x_test_new, y_test_r), callbacks=callbacks2, batch_size=32)
+
+
+model2 = keras.models.load_model('unet_skel_next.h5', custom_objects={"f1_m": f1_m, "loss": weighted_cce(weights)})
+
+Y = model2.predict(x_test_new)
+
+write_imgs(Y, names_test, 'Y_pred_new', collapse=True)
 
 
 # %%
