@@ -1,12 +1,16 @@
 # %%
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"    
 import tensorflow as tf
+import numpy as np
 
 import os
 import time
 
 from matplotlib import pyplot as plt
 from IPython import display
-OUTPUT_CHANNELS = 1
+OUTPUT_CHANNELS = 2
 
 def downsample(filters, size, apply_batchnorm=True):
   initializer = tf.random_normal_initializer(0., 0.02)
@@ -41,10 +45,9 @@ def upsample(filters, size, apply_dropout=False):
   result.add(tf.keras.layers.ReLU())
 
   return result
-# %%
 
 def Generator():
-    inputs = tf.keras.layers.Input(shape=[256, 256, 1])
+    inputs = tf.keras.layers.Input(shape=[256, 256, 2])
 
     down_stack = [
     downsample(64, 4, apply_batchnorm=False),  # (bs, 128, 128, 64)
@@ -92,13 +95,15 @@ def Generator():
     x = last(x)
 
     return tf.keras.Model(inputs=inputs, outputs=x)
-# %%
+
 generator = Generator()
 tf.keras.utils.plot_model(generator, show_shapes=True, dpi=64)
-# %%
+
 # loss part
 LAMBDA = 100
-loss_object = tf.keras.losses.BinaryCrossentropy()
+from losses import weighted_cce
+from functools import partial
+loss_object = partial(weighted_cce, np.array([1, 15]))
 def generator_loss(disc_generated_output, gen_output, target):
   gan_loss = loss_object(tf.ones_like(disc_generated_output), disc_generated_output)
 
@@ -108,12 +113,11 @@ def generator_loss(disc_generated_output, gen_output, target):
   total_gen_loss = gan_loss + (LAMBDA * l1_loss)
 
   return total_gen_loss, gan_loss, l1_loss
-# %%
 def Discriminator():
   initializer = tf.random_normal_initializer(0., 0.02)
 
-  inp = tf.keras.layers.Input(shape=[256, 256, 1], name='input_image')
-  tar = tf.keras.layers.Input(shape=[256, 256, 1], name='target_image')
+  inp = tf.keras.layers.Input(shape=[256, 256, 2], name='input_image')
+  tar = tf.keras.layers.Input(shape=[256, 256, 2], name='target_image')
 
   x = tf.keras.layers.concatenate([inp, tar])  # (bs, 256, 256, channels*2)
 
@@ -137,11 +141,9 @@ def Discriminator():
 
   return tf.keras.Model(inputs=[inp, tar], outputs=last)
 
-# %%
 discriminator = Discriminator()
 tf.keras.utils.plot_model(discriminator, show_shapes=True, dpi=64)
 
-# %%
 def discriminator_loss(disc_real_output, disc_generated_output):
   real_loss = loss_object(tf.ones_like(disc_real_output), disc_real_output)
 
@@ -150,7 +152,7 @@ def discriminator_loss(disc_real_output, disc_generated_output):
   total_disc_loss = real_loss + generated_loss
 
   return total_disc_loss
-# %%
+
 generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 checkpoint_dir = './training_checkpoints'
@@ -160,7 +162,6 @@ checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
                                  generator=generator,
                                  discriminator=discriminator)
 
-# %%
 def generate_images(model, test_input, tar):
   prediction = model(test_input, training=True)
   """  
@@ -179,18 +180,13 @@ def generate_images(model, test_input, tar):
   """
 
 
-# %%
-# training
-from utils import read_dataset
-x_train, x_test, y_train, y_test = read_dataset()
-EPOCHS = 150
+
 import datetime
 log_dir="logs/"
 
 summary_writer = tf.summary.create_file_writer(
   log_dir + "fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
-# %%
 @tf.function
 def train_step(input_image, target, epoch):
   with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
@@ -218,7 +214,7 @@ def train_step(input_image, target, epoch):
     tf.summary.scalar('gen_l1_loss', gen_l1_loss, step=epoch)
     tf.summary.scalar('disc_loss', disc_loss, step=epoch)
 
-# %%
+
 def fit(train_ds, epochs, test_ds):
   for epoch in range(epochs):
     start = time.time()
@@ -241,9 +237,10 @@ def fit(train_ds, epochs, test_ds):
     print ('Time taken for epoch {} is {} sec\n'.format(epoch + 1,
                                                         time.time()-start))
   checkpoint.save(file_prefix=checkpoint_prefix)
+#
 # %%
-import numpy as np
-x_train, x_test, y_train, y_test = read_dataset()
+from utils import read_dataset
+x_train, x_test, y_train, y_test, _, _ = read_dataset()
 def reshape_target(target):
     new_y_ls = []
     for y in target:
@@ -255,31 +252,9 @@ def reshape_target(target):
         new_y_ls.append(new_y)
     return np.array(new_y_ls)
 
-#y_train, y_test = reshape_target(y_train), reshape_target(y_test)
-# %%
-y_train.shape
-# %%
+x_test, x_train, y_train, y_test= reshape_target(x_test), reshape_target(x_train), reshape_target(y_train), reshape_target(y_test)
+
 fit((x_train.astype(np.float32), y_train.astype(np.float32)), 100, (x_test.astype(np.float32), y_test.astype(np.float32)))
-
-# %%
-x_train, x_test, y_train, y_test = read_dataset()
-# %%
-x_train = x_train.reshape((x_train.shape[0], 256, 256, 1))
-x_test = x_test.reshape((x_test.shape[0], 256, 256, 1))
-
-y_train = y_train.reshape((y_train.shape[0], 256, 256, 1))
-y_test = y_test.reshape((y_test.shape[0], 256, 256, 1))
-# %%
-gen_output = generator(x_train, training=True)
-# %%
-from skimage.io import imsave
-imsave("out.png", gen_output[0])
-
-
-# %%
-generate_images(generator, x_test, y_test)
-# %%
-train_step(x_train, y_train, 1)
 
 
 # %%

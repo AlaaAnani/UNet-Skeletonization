@@ -1,5 +1,10 @@
 # %%
 # example of pix2pix gan for satellite to map image-to-image translation
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"    
+# To disable using GPU
+
 from numpy import load
 from numpy import zeros
 from numpy import ones
@@ -17,7 +22,8 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import LeakyReLU
 from matplotlib import pyplot
-
+from losses import weighted_cce
+from metrics import f1_m
 # define the discriminator model
 def define_discriminator(image_shape):
 	# weight initialization
@@ -88,7 +94,7 @@ def decoder_block(layer_in, skip_in, n_filters, dropout=True):
 	return g
 
 # define the standalone generator model
-def define_generator(image_shape=(256,256,1)):
+def define_generator(image_shape=(256,256,2)):
 	# weight initialization
 	init = RandomNormal(stddev=0.02)
 	# image input
@@ -97,23 +103,23 @@ def define_generator(image_shape=(256,256,1)):
 	e1 = define_encoder_block(in_image, 64, batchnorm=False)
 	e2 = define_encoder_block(e1, 128)
 	e3 = define_encoder_block(e2, 256)
-	e4 = define_encoder_block(e3, 512)
-	e5 = define_encoder_block(e4, 512)
-	e6 = define_encoder_block(e5, 512)
-	e7 = define_encoder_block(e6, 512)
+	#e4 = define_encoder_block(e3, 512)
+	#e5 = define_encoder_block(e4, 512)
+	#e6 = define_encoder_block(e5, 512)
+	e7 = define_encoder_block(e3, 512)
 	# bottleneck, no batch norm and relu
 	b = Conv2D(512, (4,4), strides=(2,2), padding='same', kernel_initializer=init)(e7)
 	b = Activation('relu')(b)
 	# decoder model
 	d1 = decoder_block(b, e7, 512)
-	d2 = decoder_block(d1, e6, 512)
-	d3 = decoder_block(d2, e5, 512)
-	d4 = decoder_block(d3, e4, 512, dropout=False)
-	d5 = decoder_block(d4, e3, 256, dropout=False)
+	#d2 = decoder_block(d1, e6, 512)
+	#d3 = decoder_block(d2, e5, 512)
+	#d4 = decoder_block(d3, e4, 512, dropout=False)
+	d5 = decoder_block(d1, e3, 256, dropout=False)
 	d6 = decoder_block(d5, e2, 128, dropout=False)
 	d7 = decoder_block(d6, e1, 64, dropout=False)
 	# output
-	g = Conv2DTranspose(1, (4,4), strides=(2,2), padding='same', kernel_initializer=init)(d7)
+	g = Conv2DTranspose(2, (4,4), strides=(2,2), padding='same', kernel_initializer=init)(d7)
 	out_image = Activation('tanh')(g)
 	# define model
 	model = Model(in_image, out_image)
@@ -129,6 +135,7 @@ def define_gan(g_model, d_model, image_shape):
 	in_src = Input(shape=image_shape)
 	# connect the source image to the generator input
 	gen_out = g_model(in_src)
+	print(gen_out)
 	# connect the source input and generator output to the discriminator input
 	dis_out = d_model([in_src, gen_out])
 	# src image as input, generated image and classification output
@@ -201,7 +208,7 @@ def summarize_performance(step, g_model, dataset, n_samples=3):
 	pyplot.close()
 	"""
 	# save the generator model
-	filename2 = 'model_%06d.h5' % (step+1)
+	filename2 = 'model_pix2pix.h5'
 	g_model.save(filename2)
 	print('>Saved: %s' % (filename2))
 
@@ -230,39 +237,51 @@ def train(d_model, g_model, gan_model, dataset, save_every_n_epoch=2, n_epochs=1
 		# summarize performance
 		print('>%d, d1[%.3f] d2[%.3f] g[%.3f]' % (i+1, d_loss1, d_loss2, g_loss))
 		# summarize model performance
-		if (i+1) % (bat_per_epo * save_every_n_epoch) == 0:
+		if (i+1) % (bat_per_epo * 10) == 0:
 			summarize_performance(i, g_model, dataset)
+
 from utils import read_dataset
 
-# %%
-
-x_train, x_test, y_train, y_test = read_dataset()
-# %%
+def reshape_target(target):
+    new_y_ls = []
+    for y in target:
+        zeros = y==0
+        ones = y==1
+        new_y = np.zeros((y.shape[0], y.shape[1], 2))
+        new_y[:, :, 0][zeros] = 1
+        new_y[:, :, 1][ones] = 1
+        new_y_ls.append(new_y)
+    return np.array(new_y_ls)
 import numpy as np
-x = np.array(list(x_train).extend(list(x_test)))
-y = np.array(list(y_train).extend(list(y_test)))
-# %%
+x_train, x_test, y_train, y_test, _, _ = read_dataset()
+x_test, x_train, y_train, y_test = reshape_target(x_test), reshape_target(x_train), reshape_target(y_train), reshape_target(y_test)
+
 dataset = [x_train, y_train]
 print('Loaded', dataset[0].shape, dataset[1].shape)
-# %%
+
 # define input shape based on the loaded dataset
 image_shape = dataset[0].shape[1:]
 print(image_shape)
-# %%
+
 # define the models
-d_model = define_discriminator(image_shape+(1,))
-g_model = define_generator(image_shape+(1,))
+d_model = define_discriminator(image_shape)
+g_model = define_generator(image_shape)
 # define the composite model
 gan_model = define_gan(g_model, d_model, image_shape)
 # train model
+
+
 train(d_model, g_model, gan_model, dataset,\
-	save_every_n_epoch=5, n_epochs=50, n_batch=32)
-# %%
+	save_every_n_epoch=1, n_epochs=6, n_batch=1)
+
 from tensorflow.keras.models import load_model
-new_model = load_model('model_000012.h5')
-Y = new_model.predict(x_test)
+from utils import collapse_dim
+new_model = load_model('model_pix2pix.h5')
 # %%
+Y = new_model.predict(x_test)
 from skimage.io import imsave
 for i, y in enumerate(Y):
-    imsave(f'Y_pix2pix_val/{i}.png', y)
+	y = collapse_dim(y)
+	imsave(f'Y_pix2pix_val/{i}.png', y)
+
 # %%
