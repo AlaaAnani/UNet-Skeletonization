@@ -7,7 +7,7 @@ import numpy as np
 class UNet_MoreLike():
     def __init__(self, load=False, manual=False):
         if load == True:
-            self.model = self.load_best()
+            self.load_best()
         else:
             if not manual:
                 self.build()

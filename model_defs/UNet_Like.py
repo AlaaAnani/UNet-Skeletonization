@@ -7,7 +7,7 @@ import numpy as np
 class UNet_Like():
     def __init__(self, load=False, manual=False):
         if load == True:
-            self.model = self.load_best()
+            self.load_best()
         else:
             if not manual:
                 self.build()
@@ -26,7 +26,7 @@ class UNet_Like():
             custom_objects={"f1_m": f1_m,
             "loss": weighted_cce(np.array([1, 15]))}
             ):
-        self.model =  keras.models.load_model(filepath, custom_objects=custom_objects)
+        self.model = keras.models.load_model(filepath, custom_objects=custom_objects)
 
     def predict(self, x):
         return self.model.predict(x)
