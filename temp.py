@@ -23,3 +23,4 @@ from skimage.io import imsave
 for i, y in enumerate(Y):
 	y = collapse_dim(y)
 	imsave(f'Y_pix2pix_val/{i}.png', y)
+# %%
