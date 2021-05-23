@@ -5,12 +5,13 @@ from metrics import f1_m
 from losses import weighted_cce
 import numpy as np
 class UNet_Like():
-    def __init__(self, load=False):
+    def __init__(self, load=False, manual=False):
         if load == True:
             self.model = self.load_best()
         else:
-            self.build()
-            self.compile()
+            if not manual:
+                self.build()
+                self.compile()
     
     def compile(self, 
             optimizer="adam", 
@@ -21,7 +22,7 @@ class UNet_Like():
             self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     def load_best(self, 
-            filepath='model_defs/Unet__ike.h5', 
+            filepath='model_defs/Unet_Like.h5', 
             custom_objects={"f1_m": f1_m,
             "loss": weighted_cce(np.array([1, 15]))}
             ):
@@ -32,7 +33,7 @@ class UNet_Like():
 
     def fit(self, 
             x_train, y_train, 
-            filepath="model_defs/UNet__ike.h5", 
+            filepath="model_defs/UNet_Like.h5", 
             epochs=100, 
             validation_data=None, 
             batch_size=32):
