@@ -5,7 +5,7 @@ from metrics import f1_m
 from losses import weighted_cce
 import numpy as np
 
-class UNet_Like():
+class UNet_MoreLike():
     def __init__(self, load=False, manual=False):
         if load == True:
             self.load_best()

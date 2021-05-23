@@ -47,4 +47,29 @@ def overlap_skeleton(shape_path='test_shapes', skel_path='Y_pred_new'):
         imsave(f'overlapped/{file}', overlp)
 
 
-overlap_skeleton()
+def dist_transform(X):
+    dist_imgs = []
+    for img in X:
+        dist_img = cv2.distanceTransform(img, cv2.DIST_C, 3)
+        dist_imgs.append(dist_img)
+    
+    return np.array(dist_imgs)
+
+def distance_transorm(path):
+    out_dir = 'distanced'
+
+    img_names = [name.name for name in os.scandir(
+        path) if name.is_file()]
+    
+
+    
+    for j, file in enumerate(img_names):
+        if file.find(".png") == -1:
+            continue
+        img = imread('/'.join([path, file]), as_gray=True)
+        dist_img = cv2.distanceTransform(img, cv2.DIST_C, 5)
+
+        imsave(f'{out_dir}/{file}', dist_img)
+
+# overlap_skeleton()
+distance_transorm('test_shapes')
