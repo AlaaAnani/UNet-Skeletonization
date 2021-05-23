@@ -138,5 +138,10 @@ Y_eroded/
 Y_target/
 test_shapes/
 overlapped/
+Y_tests/
+distanced/
+overlapped - Copy/
 
 .vscode/
+Y_pred_test/
+Y_pred_val/
