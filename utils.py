@@ -37,6 +37,23 @@ def read_dataset(path='dataset'):
     return x_train, x_test, y_train, y_test, names_train, names_test
 
 
+def read_tests(path='dataset'):
+    xpath = f'{path}/img_test_shape'
+
+    img_names = [name.name for name in os.scandir(
+        xpath) if name.is_file()]
+
+    x_test = []
+    for j, file in enumerate(img_names):
+        if file.find(".png") == -1:
+            continue
+        shape_img = imread('/'.join([xpath, file]), as_gray=True)
+        x_test.append(shape_img)
+    
+    x_test = np.array(x_test)
+
+    return x_test, img_names
+
 def reshape_target(target):
     new_y_ls = []
     for y in target:
@@ -59,3 +76,22 @@ def write_imgs(imgs, img_names, path, collapse=False):
         if collapse:
             y = collapse_dim(y)
         imsave(f'{path}/{img_names[i]}', y)
+
+
+def load_data(DIST=False, NO_TEST=True):
+    x_train, x_val, y_train, y_val, names_train, names_val = read_dataset()
+    y_train, y_val = reshape_target(y_train), reshape_target(y_val)
+
+    if NO_TEST:
+        x_test, names_test = None, None
+    else:
+        x_test, names_test = read_tests()
+
+    if DIST:
+        x_train = dist_transform(x_train)
+        x_val = dist_transform(x_val)
+        x_test = dist_transform(x_test)
+    
+
+
+    return x_train, x_val, y_train, y_val, names_train, names_val, x_test, names_test
