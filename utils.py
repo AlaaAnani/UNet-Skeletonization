@@ -10,13 +10,14 @@ def read_dataset(path='dataset'):
     ypath = f'{path}/img_train_skeletons'
 
     img_names = [name.name for name in os.scandir(
-        xpath) if name.is_file()]
+        xpath) if name.is_file() and name.name.find(".png") != -1]
 
     x_train = []
     y_train = []
 
     for j, file in enumerate(img_names):
         if file.find(".png") == -1:
+            img_names.pop(j)
             continue
         shape_img = imread('/'.join([xpath, file]), as_gray=True)
         skel_img = imread('/'.join([ypath, file]), as_gray=True)
