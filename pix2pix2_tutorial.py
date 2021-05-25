@@ -59,7 +59,7 @@ def define_discriminator(image_shape):
 	# define model
 	model = Model([in_src_image, in_target_image], patch_out)
 	# compile model
-	opt = Adam(learning_rate=0.0002, beta_1=0.5)
+	opt = Adam(learning_rate=0.002, beta_1=0.5)
 	model.compile(loss='binary_crossentropy', optimizer=opt, loss_weights=[0.5])
 	return model
 
@@ -141,7 +141,7 @@ def define_gan(g_model, d_model, image_shape):
 	# src image as input, generated image and classification output
 	model = Model(in_src, [dis_out, gen_out])
 	# compile model
-	opt = Adam(learning_rate=0.0002, beta_1=0.5)
+	opt = Adam(learning_rate=0.002, beta_1=0.5)
 	model.compile(loss=['binary_crossentropy', 'mae'], optimizer=opt, loss_weights=[1,100])
 	return model
 
@@ -237,7 +237,7 @@ def train(d_model, g_model, gan_model, dataset, save_every_n_epoch=2, n_epochs=1
 		# summarize performance
 		print('>%d, d1[%.3f] d2[%.3f] g[%.3f]' % (i+1, d_loss1, d_loss2, g_loss))
 		# summarize model performance
-		if (i+1) % (bat_per_epo * 10) == 0:
+		if (i+1) % (bat_per_epo * save_every_n_epoch) == 0:
 			summarize_performance(i, g_model, dataset)
 
 from utils import read_dataset
