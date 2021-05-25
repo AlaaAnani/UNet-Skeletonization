@@ -142,7 +142,7 @@ def define_gan(g_model, d_model, image_shape):
 	model = Model(in_src, [dis_out, gen_out])
 	# compile model
 	opt = Adam(learning_rate=0.002, beta_1=0.5)
-	model.compile(loss=['binary_crossentropy', 'mae'], optimizer=opt, loss_weights=[1,100])
+	model.compile(loss=['binary_crossentropy', 'mae'], loss_weights=[1,100], optimizer=opt)
 	return model
 
 # load and prepare training images
