@@ -21,7 +21,7 @@ class UNet_MoreLike():
 
     def compile(self):
         if self.model is not None:
-            self.model.compile(optimizer="rmsprop",
+            self.model.compile(optimizer="adam",
                                loss=self.loss, metrics=[f1_m])
 
     def load_best(self):
