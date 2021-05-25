@@ -4,49 +4,53 @@ from tensorflow import keras
 from metrics import f1_m
 from losses import weighted_cce
 import numpy as np
+
+from utils import collapse_dim
+
+
 class UNet_MoreLike():
-    def __init__(self, load=False, manual=False):
+    def __init__(self, name, loss, load=False, manual=False):
+        self.name = name
+        self.loss = loss
         if load == True:
             self.load_best()
         else:
             if not manual:
                 self.build()
                 self.compile()
-    
-    def compile(self, 
-            optimizer="adam", 
-            loss=weighted_cce(np.array([1, 15])), 
-            metrics=[f1_m]
-            ):
-        if self.model is not None:
-            self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
-    def load_best(self, 
-            filepath='model_defs/Unet_MoreLike.h5', 
-            custom_objects={"f1_m": f1_m,
-            "loss": weighted_cce(np.array([1, 15]))}
-            ):
-        self.model =  keras.models.load_model(filepath, custom_objects=custom_objects)
+    def compile(self):
+        if self.model is not None:
+            self.model.compile(optimizer="rmsprop",
+                               loss=self.loss, metrics=[f1_m])
+
+    def load_best(self):
+        custom_objects = {"f1_m": f1_m,
+                          "loss": self.loss}
+        filepath = f'model_defs/{self.name}.h5'
+        self.model = keras.models.load_model(
+            filepath, custom_objects=custom_objects)
 
     def predict(self, x):
-        return self.model.predict(x)
+        return collapse_dim(self.model.predict(x))
 
-    def fit(self, 
-            x_train, y_train, 
-            filepath="model_defs/UNet_MoreLike.h5", 
-            epochs=100, 
-            validation_data=None, 
+    def fit(self,
+            x_train, y_train,
+            epochs=100,
+            validation_data=None,
             batch_size=32):
-        callbacks = [keras.callbacks.ModelCheckpoint(filepath, save_best_only=True)]
+        filepath = f'model_defs/{self.name}.h5'
+        callbacks = [keras.callbacks.ModelCheckpoint(
+            filepath, save_best_only=True)]
         self.model.fit(x_train,
-         y_train,
-         epochs=epochs,
-         validation_data=validation_data,
-         batch_size=batch_size, callbacks=callbacks
-         )
+                       y_train,
+                       epochs=epochs,
+                       validation_data=validation_data,
+                       batch_size=batch_size, callbacks=callbacks
+                       )
 
-    def build(self, img_size=(256, 256, 1), 
-            num_classes=2):
+    def build(self, img_size=(256, 256, 1),
+              num_classes=2):
         inputs = keras.Input(shape=img_size)
 
         prev_layers = {}
@@ -99,8 +103,8 @@ class UNet_MoreLike():
             x = layers.concatenate([residual, x])  # Add back residual
 
         # Add a per-pixel classification layer
-        outputs = layers.Conv2D(num_classes, 1, activation="softmax", padding="same")(x)
+        outputs = layers.Conv2D(
+            num_classes, 1, activation="softmax", padding="same")(x)
 
         # Define the model
         self.model = keras.Model(inputs, outputs)
-        

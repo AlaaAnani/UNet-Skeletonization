@@ -1,9 +1,11 @@
 
 import os
+import skimage
 from skimage.io import imread, imsave
 from sklearn.model_selection import train_test_split
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 def read_dataset(path='dataset'):
     xpath = f'{path}/img_train_shape'
@@ -70,13 +72,40 @@ def reshape_target(target):
 def collapse_dim(y):
     mask = np.argmax(y, axis=-1)
     mask = np.expand_dims(mask, axis=-1)
+    mask = mask.reshape(*mask.shape[:-1])
     return mask
 
 def write_imgs(imgs, img_names, path, collapse=False):
     for i, y in enumerate(imgs):
         if collapse:
             y = collapse_dim(y)
-        imsave(f'{path}/{img_names[i]}', y)
+        timg = cv2.normalize(y, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+        imsave(f'{path}/{img_names[i]}', timg)
+
+def dist_transform(X):
+    dist_imgs = []
+    for img in X:
+        timg = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+        dist_img = cv2.distanceTransform(timg, cv2.DIST_C, 3)
+        dist_imgs.append(dist_img)
+    
+    return np.array(dist_imgs)
+
+def distance_transform(path):
+    out_dir = 'distanced'
+
+    img_names = [name.name for name in os.scandir(
+        path) if name.is_file()]
+    
+
+    
+    for j, file in enumerate(img_names):
+        if file.find(".png") == -1:
+            continue
+        img = imread('/'.join([path, file]), as_gray=True)
+        dist_img = cv2.distanceTransform(img, cv2.DIST_C, 5)
+
+        imsave(f'{out_dir}/{file}', dist_img)
 
 
 def load_data(DIST=False, NO_TEST=True):

@@ -31,7 +31,7 @@ def erode_imgs():
         imsave(f'Y_eroded/{file}', thin)
 
 
-def overlap_skeleton(shape_path='test_shapes', skel_path='Y_pred_new'):
+def overlap_skeleton(shape_path='x_val', skel_path='I3'):
     out_dir = 'overlapped'
 
     img_names = [name.name for name in os.scandir(
@@ -44,32 +44,9 @@ def overlap_skeleton(shape_path='test_shapes', skel_path='Y_pred_new'):
         skel_img = imread('/'.join([skel_path, file]), as_gray=True)
 
         overlp = cv2.bitwise_xor(shape_img,skel_img)
-        imsave(f'overlapped/{file}', overlp)
+        imsave(f'{out_dir}/{file}', overlp)
 
 
-def dist_transform(X):
-    dist_imgs = []
-    for img in X:
-        dist_img = cv2.distanceTransform(img, cv2.DIST_C, 3)
-        dist_imgs.append(dist_img)
-    
-    return np.array(dist_imgs)
-
-def distance_transorm(path):
-    out_dir = 'distanced'
-
-    img_names = [name.name for name in os.scandir(
-        path) if name.is_file()]
-    
-
-    
-    for j, file in enumerate(img_names):
-        if file.find(".png") == -1:
-            continue
-        img = imread('/'.join([path, file]), as_gray=True)
-        dist_img = cv2.distanceTransform(img, cv2.DIST_C, 5)
-
-        imsave(f'{out_dir}/{file}', dist_img)
 
 # overlap_skeleton()
-distance_transorm('test_shapes')
+# distance_transorm('test_shapes')
