@@ -269,7 +269,7 @@ x_train = np.reshape(x_train, x_train.shape+(1,))
 x_test = np.reshape(x_test, x_test.shape+(1,))
 y_train = np.reshape(y_train, y_train.shape+(1,))
 y_test = np.reshape(y_test, y_test.shape+(1,))
-
+# %%
 dataset = [x_train, y_train]
 print('Loaded', dataset[0].shape, dataset[1].shape)
 # %%
