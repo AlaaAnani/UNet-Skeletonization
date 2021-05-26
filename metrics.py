@@ -1,7 +1,11 @@
 import tensorflow as tf
 from tensorflow.keras import backend as K
+from tensorflow.python.keras import backend as KK
+
 import numpy as np
 from utils import collapse_dim
+import cv2
+
 
 def recall_m(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(tf.math.multiply(y_true, y_pred), 0, 1)))
@@ -38,7 +42,6 @@ def f1_m(y_true, y_pred):
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
 
-
 def recall_i(y_true, y_pred):
     true_positives = np.sum(np.round(np.clip(np.multiply(y_true, y_pred), 0, 1)))
     possible_positives = np.sum(np.round(np.clip(y_true, 0, 1)))
@@ -66,3 +69,18 @@ def f1_i(y_true, y_pred):
         f1_scores.append(2*((precision*recall)/(precision+recall+K.epsilon())))
 
     return np.average(f1_scores), f1_scores
+
+def template_matching_i(y_true, y_pred):
+    corr_list = []
+    for yt, yp in zip(y_true, y_pred):
+        yp = cv2.copyMakeBorder(yp, 50, 50, 50, 50, cv2.BORDER_CONSTANT)
+        # Convert it to grayscale
+        # Read the template
+        # Perform match operations.
+
+        res = cv2.matchTemplate(yp, yt, cv2.TM_CCORR_NORMED)
+        corr_list.append(np.max(res))
+
+    return np.average(np.array(corr_list)), corr_list
+
+
