@@ -155,3 +155,5 @@ Y_pix2pix_val/
 */desktop.ini
 desktop.ini
 graphs/
+y_pred_val1/
+y_pred_val2/

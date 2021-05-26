@@ -6,6 +6,7 @@ from losses import weighted_cce
 import numpy as np
 
 from utils import collapse_dim
+from keras.utils.vis_utils import plot_model
 
 
 class UNet_MoreLike():
@@ -34,6 +35,9 @@ class UNet_MoreLike():
 
     def predict(self, x):
         return collapse_dim(self.model.predict(x))
+
+    def plot(self):
+        plot_model(self.model, to_file=f'model_defs/{self.name}_plot.h5', show_shapes=True, show_layer_names=True)
 
     def fit(self,
             x_train, y_train,

@@ -6,7 +6,7 @@ from losses import weighted_cce
 import numpy as np
 
 from utils import collapse_dim
-
+from keras.utils.vis_utils import plot_model
 
 class UNet_Thick():
     def __init__(self, name, loss, load=False, manual=False):
@@ -48,6 +48,8 @@ class UNet_Thick():
                        validation_data=validation_data,
                        batch_size=batch_size, callbacks=callbacks
                        )
+    def plot(self):
+        plot_model(self.model, to_file=f'model_defs/{self.name}_plot.h5', show_shapes=True, show_layer_names=True)
 
     def build(self, img_size=(256, 256, 1),
               num_classes=2):

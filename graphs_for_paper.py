@@ -14,6 +14,7 @@ import cv2
 from losses import weighted_cce
 from metrics import f1_m, f1_i, template_matching_i
 from model_defs.UNet_MoreLike import UNet_MoreLike
+from model_defs.UNet_Thick import UNet_Thick
 from utils import (collapse_dim, show, load_data, read_dataset, reshape_target, dist_transform,
                    write_imgs)
 
@@ -44,18 +45,36 @@ x_train, x_val, y_train, y_val, names_train, names_val, x_test, names_test = loa
 # write_imgs(y_val, names_val, 'Y_target')
 
 # Build 2 models
-model1 = UNet_MoreLike('unet_thick_stage1', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_1)
-model2 = UNet_MoreLike('unet_thick_stage2', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_2)
+model1 = UNet_Thick('unet_thick_stage1', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_1)
+model2 = UNet_Thick('unet_thick_stage2', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_2)
 # model3 = UNet_MoreLike('unet_more_like_stage3', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_3)
 
+# %%
+# plot model
+model1.plot()
+# %%
 
+# %%
+# plot scores
 I1 = model1.predict(x_val)
 I2 = model2.predict(I1)
+
+# %%
+write_imgs(I1, names_val, 'y_pred_val1')
+write_imgs(I2, names_val, 'y_pred_val2')
+write_imgs(collapse_dim(y_val), names_val, 'y_val')
+# %%
+write_imgs(x_val, names_val, 'x_val')
+
+
+# %%
 F1, F1_scores = f1_i(y_val, I2)
 CORR, CORR_ls = template_matching_i(y_val, I2)
 
 for i in range(len(x_val)):
     images = [x_val[i], collapse_dim(y_val[i]), I2[i]]
     titles = ['Original image', 'Target Skeleton', 'Predicted Skeleton: f1='+str(F1_scores[i])[0:5]+", corr="+str(CORR_ls[i])[0:5]]
-    show(1, 3, images, titles, save=True, path="graphs/f1_corr"+str(i)+".png")
+    show(1, 3, images, titles, save=True, path="graphs/"+names_val[i])
 
+
+# %%
