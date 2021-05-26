@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow import keras
-from metrics import f1_m, template_matching
+from metrics import f1_m
 from losses import weighted_cce
 import numpy as np
 
@@ -9,10 +9,10 @@ from utils import collapse_dim
 
 
 class UNet_MoreLike():
-    def __init__(self, name, loss, metrics, load=False, manual=False):
+    def __init__(self, name, loss, load=False, manual=False):
         self.name = name
         self.loss = loss
-        self.metrics = metrics
+        
         if load == True:
             self.load_best()
         else:
@@ -23,10 +23,10 @@ class UNet_MoreLike():
     def compile(self):
         if self.model is not None:
             self.model.compile(optimizer="adam",
-                               loss=self.loss, metrics=self.metrics)
+                               loss=self.loss, metrics=[f1_m])
 
     def load_best(self):
-        custom_objects = {"metrics": self.metrics,
+        custom_objects = {"f1_m": f1_m,
                           "loss": self.loss}
         filepath = f'model_defs/{self.name}.h5'
         self.model = keras.models.load_model(
