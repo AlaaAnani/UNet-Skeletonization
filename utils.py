@@ -5,7 +5,7 @@ from skimage.io import imread, imsave
 from sklearn.model_selection import train_test_split
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt 
 
 def read_dataset(path='dataset'):
     xpath = f'{path}/img_train_shape'
@@ -39,6 +39,26 @@ def read_dataset(path='dataset'):
     
     return x_train, x_test, y_train, y_test, names_train, names_test
 
+def read_pred_target():
+    xpath = 'y_true'
+    ypath = 'y_pred'
+    img_names = [name.name for name in os.scandir(
+        xpath) if name.is_file() and name.name.find(".png") != -1]
+    y_pred = []
+    y_true = []
+
+    for j, file in enumerate(img_names):
+        if file.find(".png") == -1:
+            img_names.pop(j)
+            continue
+        yp = imread('/'.join([xpath, file]), as_gray=True)
+        yt = imread('/'.join([ypath, file]), as_gray=True)
+        y_pred.append(yp)
+        y_true.append(yt)
+
+    y_pred = np.array(y_pred)
+    y_true = np.array(y_true)
+    return y_true, y_pred
 
 def read_tests(path='dataset'):
     xpath = f'{path}/img_test_shape'
@@ -125,3 +145,21 @@ def load_data(DIST=False, NO_TEST=True):
 
 
     return x_train, x_val, y_train, y_val, names_train, names_val, x_test, names_test
+
+def show(rows, columns, images, titles, save=False, path=None, axis='off'):
+    plt.style.use('default')
+    fig = plt.figure(figsize=(40, 40)) 
+    k = 0
+    for i in range(rows):
+        for j in range(columns):
+            if k == len(images):
+                break
+            fig.add_subplot(rows, columns, k + 1)
+            plt.imshow(images[k], cmap='gray') 
+            plt.axis(axis) 
+            plt.title(titles[k], fontsize=40)
+            k += 1
+    if save:
+        if path is not None:
+            plt.savefig(path, facecolorcolor='white', transparent=False, bbox_inches='tight')
+    plt.close()

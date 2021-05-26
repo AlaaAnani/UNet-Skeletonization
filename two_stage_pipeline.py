@@ -33,8 +33,8 @@ batch_size = 32
 
 NO_TEST = True
 SHOW_VAL = True
-TRAIN_1 = True
-TRAIN_2 = True
+TRAIN_1 = False
+TRAIN_2 = False
 TRAIN_3 = False
 
 # Free up RAM in case the model definition cells were run multiple times

@@ -12,6 +12,7 @@ class UNet_MoreLike():
     def __init__(self, name, loss, load=False, manual=False):
         self.name = name
         self.loss = loss
+        
         if load == True:
             self.load_best()
         else:
