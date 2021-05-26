@@ -21,8 +21,7 @@ class UNet_Thick():
 
     def compile(self):
         if self.model is not None:
-            opt = keras.optimizers.Adam(learning_rate=0.001)
-            self.model.compile(optimizer=opt,
+            self.model.compile(optimizer="adam",
                                loss=self.loss, metrics=[f1_m])
 
     def load_best(self):
@@ -58,63 +57,62 @@ class UNet_Thick():
         ### [First half of the network: downsampling inputs] ###
 
         # Entry block
-        x = layers.BatchNormalization()(inputs)
-        x = layers.Conv2D(32, 3, padding="same")(x)
-        
+        x = layers.Conv2D(32, 3, padding="same")(inputs)
+        x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
 
         x = layers.Conv2D(32, 3, padding="same")(x)
-        #x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
 
         x = layers.Activation("relu")(x)
         x = layers.SeparableConv2D(32, 3, padding="same")(x)
-        #x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization()(x)
 
-        
+        prev_layers[32] = x
 
         x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
-        prev_layers[32] = x
 
         # Blocks 1, 2, 3 are identical apart from the feature depth.
         for filters in [64, 128, 256]:
             x = layers.Activation("relu")(x)
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            #x = layers.BatchNormalization()(x)
+            x = layers.BatchNormalization()(x)
 
             x = layers.Activation("relu")(x)
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            #x = layers.BatchNormalization()(x)
+            x = layers.BatchNormalization()(x)
 
             x = layers.Activation("relu")(x)
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            #x = layers.BatchNormalization()(x)
+            x = layers.BatchNormalization()(x)
 
-            
+            prev_layers[filters] = x
 
             x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
-            prev_layers[filters] = x
 
         ### [Second half of the network: upsampling inputs] ###
 
         for filters in [256, 128, 64, 32]:
             x = layers.Activation("relu")(x)
             x = layers.Conv2DTranspose(filters, 3, padding="same")(x)
-            #x = layers.BatchNormalization()(x)
+            x = layers.BatchNormalization()(x)
 
+            x = layers.Activation("relu")(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same")(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.Activation("relu")(x)
+            x = layers.SeparableConv2D(filters, 3, padding="same")(x)
+            x = layers.BatchNormalization()(x)
+
+            x = layers.UpSampling2D(2)(x)
+
+            # Project residual
+            # residual = layers.UpSampling2D(2)(prev_layers[filters])
             residual = prev_layers[filters]
             # residual = layers.Conv2D(filters, 1, padding="same")(residual)
             x = layers.concatenate([residual, x])  # Add back residual
-
-            x = layers.Activation("relu")(x)
-            x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            #x = layers.BatchNormalization()(x)
-
-            x = layers.Activation("relu")(x)
-            x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            #x = layers.BatchNormalization()(x)
-
-            x = layers.UpSampling2D(2)(x)
 
         # Add a per-pixel classification layer
         outputs = layers.Conv2D(

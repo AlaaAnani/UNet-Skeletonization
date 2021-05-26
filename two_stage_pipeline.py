@@ -1,5 +1,3 @@
-# %%
-
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
 
@@ -94,5 +92,3 @@ if NO_TEST is False:
 
     write_imgs(x_test2, names_test, 'Y_pred_test1')
     write_imgs(Y_pred_test, names_test, 'Y_pred_test2')
-
-# %%
