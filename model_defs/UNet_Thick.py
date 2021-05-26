@@ -21,7 +21,8 @@ class UNet_Thick():
 
     def compile(self):
         if self.model is not None:
-            self.model.compile(optimizer="adam",
+            opt = keras.optimizers.Adam(learning_rate=0.0001)
+            self.model.compile(optimizer=opt,
                                loss=self.loss, metrics=[f1_m])
 
     def load_best(self):
@@ -57,17 +58,18 @@ class UNet_Thick():
         ### [First half of the network: downsampling inputs] ###
 
         # Entry block
-        x = layers.Conv2D(32, 3, padding="same")(inputs)
-        x = layers.BatchNormalization()(x)
+        x = layers.BatchNormalization()(inputs)
+        x = layers.Conv2D(32, 3, padding="same")(x)
+        
         x = layers.Activation("relu")(x)
 
         x = layers.Conv2D(32, 3, padding="same")(x)
-        x = layers.BatchNormalization()(x)
+        #x = layers.BatchNormalization()(x)
         x = layers.Activation("relu")(x)
 
         x = layers.Activation("relu")(x)
         x = layers.SeparableConv2D(32, 3, padding="same")(x)
-        x = layers.BatchNormalization()(x)
+        #x = layers.BatchNormalization()(x)
 
         prev_layers[32] = x
 
@@ -77,15 +79,15 @@ class UNet_Thick():
         for filters in [64, 128, 256]:
             x = layers.Activation("relu")(x)
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            x = layers.BatchNormalization()(x)
+            #x = layers.BatchNormalization()(x)
 
             x = layers.Activation("relu")(x)
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            x = layers.BatchNormalization()(x)
+            #x = layers.BatchNormalization()(x)
 
             x = layers.Activation("relu")(x)
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            x = layers.BatchNormalization()(x)
+            #x = layers.BatchNormalization()(x)
 
             prev_layers[filters] = x
 
@@ -96,15 +98,15 @@ class UNet_Thick():
         for filters in [256, 128, 64, 32]:
             x = layers.Activation("relu")(x)
             x = layers.Conv2DTranspose(filters, 3, padding="same")(x)
-            x = layers.BatchNormalization()(x)
+            #x = layers.BatchNormalization()(x)
 
             x = layers.Activation("relu")(x)
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            x = layers.BatchNormalization()(x)
+            #x = layers.BatchNormalization()(x)
 
             x = layers.Activation("relu")(x)
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
-            x = layers.BatchNormalization()(x)
+            #x = layers.BatchNormalization()(x)
 
             x = layers.UpSampling2D(2)(x)
 
