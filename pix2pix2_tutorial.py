@@ -23,7 +23,10 @@ from keras.layers import Dropout
 from keras.layers import BatchNormalization
 from keras.layers import LeakyReLU
 from matplotlib import pyplot
+<<<<<<< HEAD
  
+=======
+>>>>>>> 4963adf5cd239a9d1aba6942703a35be2430cbc9
 # define the discriminator model
 def define_discriminator(image_shape):
 	# weight initialization
@@ -59,8 +62,13 @@ def define_discriminator(image_shape):
 	# define model
 	model = Model([in_src_image, in_target_image], patch_out)
 	# compile model
+<<<<<<< HEAD
 	opt = Adam(lr=0.0002, beta_1=0.5)
 	model.compile(loss='binary_crossentropy', optimizer=opt, loss_weights=[0.5])
+=======
+	opt = Adam(learning_rate=0.0002, beta_1=0.5)
+	model.compile(loss='mae', optimizer=opt, loss_weights=[0.5])
+>>>>>>> 4963adf5cd239a9d1aba6942703a35be2430cbc9
 	return model
  
 # define an encoder block
@@ -94,6 +102,10 @@ def decoder_block(layer_in, skip_in, n_filters, dropout=True):
 	return g
  
 # define the standalone generator model
+<<<<<<< HEAD
+=======
+# define the standalone generator model
+>>>>>>> 4963adf5cd239a9d1aba6942703a35be2430cbc9
 def define_generator(image_shape=(256,256,1)):
 	# weight initialization
 	init = RandomNormal(stddev=0.02)
@@ -119,12 +131,17 @@ def define_generator(image_shape=(256,256,1)):
 	d6 = decoder_block(d5, e2, 128, dropout=False)
 	d7 = decoder_block(d6, e1, 64, dropout=False)
 	# output
+<<<<<<< HEAD
 	g = Conv2DTranspose(3, (4,4), strides=(2,2), padding='same', kernel_initializer=init)(d7)
+=======
+	g = Conv2DTranspose(1, (4,4), strides=(2,2), padding='same', kernel_initializer=init)(d7)
+>>>>>>> 4963adf5cd239a9d1aba6942703a35be2430cbc9
 	out_image = Activation('tanh')(g)
 	# define model
 	model = Model(in_image, out_image)
 	return model
  
+# define the combined generator and discriminator model, for updating the generator
 # define the combined generator and discriminator model, for updating the generator
 def define_gan(g_model, d_model, image_shape):
 	# make weights in the discriminator not trainable
@@ -140,8 +157,13 @@ def define_gan(g_model, d_model, image_shape):
 	# src image as input, generated image and classification output
 	model = Model(in_src, [dis_out, gen_out])
 	# compile model
+<<<<<<< HEAD
 	opt = Adam(lr=0.0002, beta_1=0.5)
 	model.compile(loss=['binary_crossentropy', 'mae'], optimizer=opt, loss_weights=[1,100])
+=======
+	opt = Adam(learning_rate=0.0002, beta_1=0.5)
+	model.compile(loss=['mae'], optimizer=opt, loss_weights=[1,100])
+>>>>>>> 4963adf5cd239a9d1aba6942703a35be2430cbc9
 	return model
  
 # load and prepare training images
@@ -207,8 +229,13 @@ def summarize_performance(step, g_model, dataset, n_samples=3):
 	# save the generator model
 	filename2 = 'model_pix2pix.h5'
 	g_model.save(filename2)
+<<<<<<< HEAD
 	print('>Saved: %s and %s' % (filename1, filename2))
  
+=======
+	print('>Saved: %s' % (filename2))
+# %%
+>>>>>>> 4963adf5cd239a9d1aba6942703a35be2430cbc9
 # train pix2pix models
 def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
 	# determine the output square shape of the discriminator
@@ -230,9 +257,9 @@ def train(d_model, g_model, gan_model, dataset, n_epochs=100, n_batch=1):
 		# update discriminator for generated samples
 		d_loss2 = d_model.train_on_batch([X_realA, X_fakeB], y_fake)
 		# update the generator
-		g_loss, _, _ = gan_model.train_on_batch(X_realA, [y_real, X_realB])
+		g_loss= gan_model.train_on_batch(X_realA, [y_real, X_realB])
 		# summarize performance
-		print('>%d, d1[%.3f] d2[%.3f] g[%.3f]' % (i+1, d_loss1, d_loss2, g_loss))
+		print(i+1,  'd1', d_loss1, 'd2', d_loss2, 'g', str(g_loss))
 		# summarize model performance
 		if (i+1) % (bat_per_epo * 1) == 0:
 			summarize_performance(i, g_model, dataset)
@@ -264,8 +291,16 @@ def reshape_target(target):
         new_y_ls.append(new_y)
     return np.array(new_y_ls)
 import numpy as np
+# %%
 x_train, x_test, y_train, y_test, _, _ = read_dataset()
 #x_test, x_train, y_train, y_test = reshape_target(x_test), reshape_target(x_train), reshape_target(y_train), reshape_target(y_test)
+<<<<<<< HEAD
+=======
+x_train = np.reshape(x_train, (x_train.shape[0], 256, 256, 1))
+y_train = np.reshape(y_train, (y_train.shape[0], 256, 256, 1))
+x_test = np.reshape(x_test, (x_test.shape[0], 256, 256, 1))
+y_test = np.reshape(y_test, (y_test.shape[0], 256, 256, 1))
+>>>>>>> 4963adf5cd239a9d1aba6942703a35be2430cbc9
 
 dataset = [x_train, y_train]
 print('Loaded', dataset[0].shape, dataset[1].shape)
@@ -281,13 +316,22 @@ g_model = define_generator(image_shape)
 # define the composite model
 gan_model = define_gan(g_model, d_model, image_shape)
 # train model
+<<<<<<< HEAD
 train(d_model, g_model, gan_model, dataset)
+=======
 
+# %%
+train(d_model, g_model, gan_model, dataset,\
+	save_every_n_epoch=1, n_epochs=20, n_batch=512)
+>>>>>>> 4963adf5cd239a9d1aba6942703a35be2430cbc9
+
+# %%
 from tensorflow.keras.models import load_model
 from utils import collapse_dim
 new_model = load_model('model_pix2pix.h5')
-# %%
+
 Y = new_model.predict(x_test)
+# %%
 from skimage.io import imsave
 for i, y in enumerate(Y):
 	y = collapse_dim(y)
