@@ -45,8 +45,8 @@ x_train, x_val, y_train, y_val, names_train, names_val, x_test, names_test = loa
 # write_imgs(y_val, names_val, 'Y_target')
 
 # Build 2 models
-model1 = UNet_MoreLike('unet_more_like_stage1', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_1)
-model2 = UNet_MoreLike('unet_more_like_stage2', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_2)
+model1 = UNet_MoreLike('unet_more_like_stage1', loss=weighted_cce(np.array([1, 17])), metrics=[f1_m], load= not TRAIN_1)
+model2 = UNet_MoreLike('unet_more_like_stage2', loss=weighted_cce(np.array([1, 17])), metrics=[f1_m], load= not TRAIN_2)
 # model3 = UNet_MoreLike('unet_more_like_stage3', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_3)
 
 if TRAIN_1:
