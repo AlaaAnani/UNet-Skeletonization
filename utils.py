@@ -27,7 +27,7 @@ def read_dataset(path='dataset'):
         y_train.append(skel_img)
 
     x_train, x_test, y_train, y_test, names_train, names_test = train_test_split(
-        x_train, y_train, img_names, test_size=0.2, random_state=37)
+        x_train, y_train, img_names, test_size=0.33, random_state=37)
     
     x_train = np.array(x_train)
     x_test = np.array(x_test)
