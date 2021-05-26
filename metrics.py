@@ -72,12 +72,10 @@ def f1_i(y_true, y_pred):
 
 def template_matching_i(y_true, y_pred):
     corr_list = []
-    for yt, yp in zip(y_true, y_pred):
+    y_true = collapse_dim(y_true)
+    for yt, yp in zip(y_true.astype(np.float32), y_pred.astype(np.float32)):
         yp = cv2.copyMakeBorder(yp, 50, 50, 50, 50, cv2.BORDER_CONSTANT)
-        # Convert it to grayscale
-        # Read the template
-        # Perform match operations.
-
+    
         res = cv2.matchTemplate(yp, yt, cv2.TM_CCORR_NORMED)
         corr_list.append(np.max(res))
 

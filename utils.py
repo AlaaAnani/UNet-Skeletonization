@@ -147,8 +147,8 @@ def load_data(DIST=False, NO_TEST=True):
     return x_train, x_val, y_train, y_val, names_train, names_val, x_test, names_test
 
 def show(rows, columns, images, titles, save=False, path=None, axis='off'):
-    plt.style.use('grayscale')
-    fig = plt.figure(figsize=(15, 15)) 
+    plt.style.use('default')
+    fig = plt.figure(figsize=(40, 40)) 
     k = 0
     for i in range(rows):
         for j in range(columns):
@@ -157,8 +157,9 @@ def show(rows, columns, images, titles, save=False, path=None, axis='off'):
             fig.add_subplot(rows, columns, k + 1)
             plt.imshow(images[k], cmap='gray') 
             plt.axis(axis) 
-            plt.title(titles[k])
+            plt.title(titles[k], fontsize=40)
             k += 1
     if save:
         if path is not None:
-            plt.savefig(path)
+            plt.savefig(path, facecolorcolor='white', transparent=False, bbox_inches='tight')
+    plt.close()

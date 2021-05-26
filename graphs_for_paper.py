@@ -1,16 +1,15 @@
 # %%
 
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"      # To disable using GPU
 
 import warnings
 
 import numpy as np
 import tensorflow as tf
-from skimage.io import imsave
 from tensorflow import keras
-import matplotlib.pyplot as plt
-
+from matplotlib import pyplot as plt
+import cv2
 
 from losses import weighted_cce
 from metrics import f1_m, f1_i, template_matching_i
@@ -48,49 +47,15 @@ x_train, x_val, y_train, y_val, names_train, names_val, x_test, names_test = loa
 model1 = UNet_MoreLike('unet_thick_stage1', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_1)
 model2 = UNet_MoreLike('unet_thick_stage2', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_2)
 # model3 = UNet_MoreLike('unet_more_like_stage3', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_3)
-# %%
-if TRAIN_1:
-    model1.fit(x_train, y_train, validation_data=(x_val,y_val), epochs=40)
-    model1.load_best()
-
-if TRAIN_2:
-    x_train2 = model1.predict(x_train)
-
-    x_val2 = model1.predict(x_val)
-
-    model2.fit(x_train2, y_train, validation_data=(x_val2, y_val), epochs=40)
-    model2.load_best()
-
-if TRAIN_3:
-    x_train2 = model1.predict(x_train)
-    x_train3 = model2.predict(x_train2)
-
-    x_val2 = model1.predict(x_val)
-    x_val3 = model2.predict(x_val2)
-
-    model3.fit(x_train3, y_train, validation_data=(x_val3, y_val), batch_size=32, epochs=40)
-    model3.load_best()
-
-if SHOW_VAL:
-    I1 = model1.predict(x_val)
-    I2 = model2.predict(I1)
-    # I3 = model3.predict(I2)
-
-    # F1, F1_scores = f1_i(y_val, I3)
-
-    # print("Avg F1 Score = ", F1)
-
-    # write_imgs(x_val, names_val, 'x_val')
-    # write_imgs(collapse_dim(y_val), names_val, 'y_val')
-    write_imgs(I2, names_val, 'I2')
-    # write_imgs(I3, names_val, 'I3')
 
 
-if NO_TEST is False:
-    x_test2 = model1.predict(x_test)
-    Y_pred_test = model2.predict(x_test2)
+I1 = model1.predict(x_val)
+I2 = model2.predict(I1)
+F1, F1_scores = f1_i(y_val, I2)
+CORR, CORR_ls = template_matching_i(y_val, I2)
 
-    write_imgs(x_test2, names_test, 'Y_pred_test1')
-    write_imgs(Y_pred_test, names_test, 'Y_pred_test2')
+for i in range(len(x_val)):
+    images = [x_val[i], collapse_dim(y_val[i]), I2[i]]
+    titles = ['Original image', 'Target Skeleton', 'Predicted Skeleton: f1='+str(F1_scores[i])[0:5]+", corr="+str(CORR_ls[i])[0:5]]
+    show(1, 3, images, titles, save=True, path="graphs/f1_corr"+str(i)+".png")
 
-# %%
