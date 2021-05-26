@@ -47,13 +47,12 @@ x_train, x_val, y_train, y_val, names_train, names_val, x_test, names_test = loa
 # write_imgs(x_val, names_val, 'val_shapes')
 # write_imgs(y_val, names_val, 'Y_target')
 def dice_coef(y_true, y_pred, smooth=1):
-    y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+    intersection = K.sum(y_true * y_pred, axis=[1,2,3])
+    union = K.sum(y_true, axis=[1,2,3]) + K.sum(y_pred, axis=[1,2,3])
+    return K.mean( (2. * intersection + smooth) / (union + smooth), axis=0)
 
 def dice_coef_loss(y_true, y_pred):
-    return -dice_coef(y_true, y_pred)
+    return 1-dice_coef(y_true, y_pred)
 # %%
 # Build 2 models
 model1 = UNet_Thick('unet_dice_thick1', loss=dice_coef_loss, load= not TRAIN_1)
