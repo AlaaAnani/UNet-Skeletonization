@@ -21,7 +21,7 @@ class UNet_Thick():
 
     def compile(self):
         if self.model is not None:
-            opt = keras.optimizers.Adam(learning_rate=0.0001)
+            opt = keras.optimizers.Adam(learning_rate=0.001)
             self.model.compile(optimizer=opt,
                                loss=self.loss, metrics=[f1_m])
 
@@ -71,9 +71,10 @@ class UNet_Thick():
         x = layers.SeparableConv2D(32, 3, padding="same")(x)
         #x = layers.BatchNormalization()(x)
 
-        prev_layers[32] = x
+        
 
         x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+        prev_layers[32] = x
 
         # Blocks 1, 2, 3 are identical apart from the feature depth.
         for filters in [64, 128, 256]:
@@ -89,9 +90,10 @@ class UNet_Thick():
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
             #x = layers.BatchNormalization()(x)
 
-            prev_layers[filters] = x
+            
 
             x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
+            prev_layers[filters] = x
 
         ### [Second half of the network: upsampling inputs] ###
 
@@ -99,6 +101,10 @@ class UNet_Thick():
             x = layers.Activation("relu")(x)
             x = layers.Conv2DTranspose(filters, 3, padding="same")(x)
             #x = layers.BatchNormalization()(x)
+
+            residual = prev_layers[filters]
+            # residual = layers.Conv2D(filters, 1, padding="same")(residual)
+            x = layers.concatenate([residual, x])  # Add back residual
 
             x = layers.Activation("relu")(x)
             x = layers.SeparableConv2D(filters, 3, padding="same")(x)
@@ -109,12 +115,6 @@ class UNet_Thick():
             #x = layers.BatchNormalization()(x)
 
             x = layers.UpSampling2D(2)(x)
-
-            # Project residual
-            # residual = layers.UpSampling2D(2)(prev_layers[filters])
-            residual = prev_layers[filters]
-            # residual = layers.Conv2D(filters, 1, padding="same")(residual)
-            x = layers.concatenate([residual, x])  # Add back residual
 
         # Add a per-pixel classification layer
         outputs = layers.Conv2D(
