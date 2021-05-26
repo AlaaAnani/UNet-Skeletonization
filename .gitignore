@@ -147,6 +147,8 @@ Y_pred_test/
 Y_pred_test1/
 Y_pred_test2/
 Y_pred_val/
+Y_pred_val1/
+Y_pred_val2/
 x_val2/
 x_val/
 y_val/
@@ -158,3 +160,5 @@ Y_pix2pix_val/
 desktop.ini
 graphs/
 *.h5
+model_defs/*.h5
+logs/
