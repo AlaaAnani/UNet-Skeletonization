@@ -16,6 +16,7 @@ from losses import weighted_cce
 from metrics import f1_m, f1_i
 from model_defs.UNet_MoreLike import UNet_MoreLike
 from model_defs.UNet_Thick import UNet_Thick
+from tensorflow.keras import backend as K
 
 from utils import (collapse_dim, load_data, read_dataset, reshape_target, dist_transform,
                    write_imgs)
@@ -45,10 +46,18 @@ x_train, x_val, y_train, y_val, names_train, names_val, x_test, names_test = loa
 # write_imgs(x_val, names_val, 'val_shapes')
 # write_imgs(x_val, names_val, 'val_shapes')
 # write_imgs(y_val, names_val, 'Y_target')
+def dice_coef(y_true, y_pred, smooth=1):
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
+def dice_coef_loss(y_true, y_pred):
+    return -dice_coef(y_true, y_pred)
+# %%
 # Build 2 models
-model1 = UNet_Thick('unet_thick1', loss=weighted_cce(np.array([1, 25])), load= not TRAIN_1)
-model2 = UNet_Thick('unet_thick2', loss=weighted_cce(np.array([1, 25])), load= not TRAIN_2)
+model1 = UNet_Thick('unet_dice_thick1', loss=dice_coef_loss, load= not TRAIN_1)
+model2 = UNet_Thick('unet_dice_thick2', loss=dice_coef_loss, load= not TRAIN_2)
 # model3 = UNet_MoreLike('unet_more_like_stage3', loss=weighted_cce(np.array([1, 17])), load= not TRAIN_3)
 
 if TRAIN_1:
