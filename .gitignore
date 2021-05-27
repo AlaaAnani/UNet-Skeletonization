@@ -130,5 +130,30 @@ dmypy.json
 
 dataset/
 Y_val/
+Y_pred/
+Y_pred_init/
+Y_pred_new/
+Y_con/
+Y_eroded/
+Y_target/
+test_shapes/
+overlapped/
+Y_tests/
+distanced/
+overlapped2/
 
 .vscode/
+Y_pred_test/
+Y_pred_test1/
+Y_pred_test2/
+Y_pred_val/
+x_val2/
+x_val/
+y_val/
+I1/
+I2/
+I3/
+Y_pix2pix_val/
+*/desktop.ini
+desktop.ini
+graphs/
